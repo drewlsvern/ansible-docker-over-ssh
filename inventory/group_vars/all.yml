@@ -1,0 +1,5 @@
+
+temp_image: '127.0.0.1:5000/temp-image-name'
+image_to_push: 'image-from-local-to-push:tag'
+
+container_registry_bind_ip_w_ports: '127.0.0.1:5000:5000'

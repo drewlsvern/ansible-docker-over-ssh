@@ -1,0 +1,52 @@
+---
+
+- name: "Remote preparation"
+  hosts: docker-remote
+  tasks:
+    - name: "Setup remote container registry"
+      community.docker.docker_container:
+        name: temporary-remote-registry
+        image: docker.io/registry
+        state: started
+        ports:
+          - '{{container_registry_bind_ip_w_ports}}'
+
+- name: "Local push"
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: "Push image to remote"
+      community.docker.docker_image:
+        name: '{{image_to_push}}'
+        repository: '{{temp_image}}'
+        push: true
+        source: local
+      
+- name: Remote pull and cleanup
+  hosts: docker-remote
+  tasks:
+    - name: Pull temp image from remote registry to remote host
+      community.docker.docker_image:
+        name: '{{temp_image}}'
+        source: pull
+
+    - name: Tag container image back to original name
+      community.docker.docker_image:
+        name: '{{temp_image}}'
+        repository: '{{image_to_push}}'
+        source: local
+
+    - name: Remove temp image
+      community.docker.docker_image:
+        name: '{{temp_image}}'
+        state: absent
+
+    - name: "Stop and remove remote container registry"
+      community.docker.docker_container:
+        name: temporary-remote-registry        
+        state: absent
+    
+    - name: "Remove remote container registry image"
+      community.docker.docker_image:
+        name: 'docker.io/registry'
+        state: absent
